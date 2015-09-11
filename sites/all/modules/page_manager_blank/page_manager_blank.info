@@ -1,0 +1,9 @@
+; $Id: page_manager_blank.info,v 1.1.4.2 2011/01/10 17:19:27 jameswilliams Exp $
+name = Page manager Blank
+description = Adds a new variant type to page manager, a blank page.
+core = 7.x
+package = Chaos tool suite
+dependencies[] = page_manager
+files[] = page_manager_blank.module
+files[] = plugins/task_handlers/redirect_context.inc
+

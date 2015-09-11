@@ -1,0 +1,7 @@
+name = CICI
+description = "Pfimed OG Vocabulary."
+core = 7.x
+
+; Information
+project = "cici_pfimed_og_vocab"
+version = 7.x-1.0

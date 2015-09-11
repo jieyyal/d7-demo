@@ -1,0 +1,7 @@
+name = "UUID Feeds"
+description = "Pfimed Feeds Intergration"
+core = "7.x"
+package = "Pfimed"
+version = 7.x-1.0
+dependencies[] = uuid
+dependencies[] = feeds

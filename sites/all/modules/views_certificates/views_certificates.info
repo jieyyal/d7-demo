@@ -1,0 +1,4 @@
+name = Views integration for Certificates
+core = 7.x
+dependencies[] = certificate
+package = "Pfimed"

@@ -1,0 +1,71 @@
+ og_context/og_context.module | 46 +++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/og_context/og_context.module b/og_context/og_context.module
+index 55a8533..dd4561b 100644
+--- a/og_context/og_context.module
++++ b/og_context/og_context.module
+@@ -144,6 +144,18 @@ function og_context_og_context_negotiation_info() {
+     'callback' => 'og_context_handler_comment',
+     'menu path' => array('comment/reply/%', 'comment/%'),
+   );
++  $providers['file-ajax'] = array(
++    'name' => t('File Ajax'),
++    'description' => t("Determine context by checking the form's node's group or the form's action parameters during file uploads."),
++    'callback' => 'og_context_handler_ajax',
++    'menu path' => array('file/ajax'),
++  );
++   $providers['system-ajax'] = array(
++    'name' => t('System Ajax'),
++    'description' => t("Determine context by checking the form's node's group or the form's action parameters during Ajax Call."),
++    'callback' => 'og_context_handler_ajax',
++    'menu path' => array('system/ajax'),
++  );
+ 
+   return $providers;
+ }
+@@ -379,7 +391,12 @@ function og_context_provider_weight($provider) {
+  */
+ function og_context_determine_context($group_type, $item = NULL, $check_access = TRUE) {
+   // Enable url and node context handlers by default.
+-  $defaults = array('url' => -5, 'node' => -4);
++  $defaults = array(
++    'url' => -5,
++    'node' => -4,
++    'file-ajax' => -3,
++    'system-ajax' => -2,
++  );
+   if (!$enabled_providers = variable_get('og_context_negotiation_group_context', $defaults)) {
+     return;
+   }
+@@ -648,3 +665,30 @@ function _og_context_views_page_access($group_type, $perm, $group_id_arg = FALSE
+     return og_user_access($group_type, $group['gid'], $perm);
+   }
+ }
++
++/**
++ * Context handler; Shared between file upload and system ajax calls.
++ *
++ * This only works for _existing_ entities, not during entity creation.
++ *
++ * @todo: Extract the logic in og_context_handler_url() for detection of group
++ * using entityreference_prepopulate and use that here.
++ */
++function og_context_handler_ajax() {
++  $item = menu_get_item();
++
++  if (strpos($item['path'], 'file/ajax') !== 0 && strpos($item['path'], 'system/ajax') !== 0) {
++    return;
++  }
++
++  list($form, $form_state) = ajax_get_form();
++
++  if (empty($form['#entity_type'])) {
++    return;
++  }
++  $entity_type = $form['#entity_type'];
++  if (empty($form_state[$entity_type])) {
++    return;
++  }
++  return _group_context_handler_entity($entity_type, $form_state[$entity_type]);
++}

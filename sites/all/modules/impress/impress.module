@@ -1,0 +1,15 @@
+<?php
+function impress_menu() {
+$items['manage/academy/course/add'] = array(
+    'title' => 'Create Project',
+    'page callback' => 'node_add',
+    'page arguments' => array('page'),
+    'access callback' => 'node_access',
+    'access arguments' => array('create', 'page'),
+    'description' => 'Add page',
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+    'type' => MENU_LOCAL_TASK,
+  );
+return $items;
+}

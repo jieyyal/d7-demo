@@ -1,0 +1,128 @@
+diff --git a/og_context/js/og_context.ajax.js b/og_context/js/og_context.ajax.js
+new file mode 100644
+index 0000000..6930932
+--- /dev/null
++++ b/og_context/js/og_context.ajax.js
+@@ -0,0 +1,57 @@
++
++/**
++ *  @file
++ *  This file extends ajax handling to include Organic Groups GET variables.
++ */
++/*
++(function ($) {
++
++/**
++ * Loads media browsers and callbacks, specifically for media as a field.
++ * /
++Drupal.behaviors.ogContext = {
++  attach: function (context, settings) {
++
++   // Before doing anything, make sure that a groupType and gid are available.
++   // @todo, should this actually use values from the incoming settings variable?
++   if (Drupal.settings.ogContext.gid && Drupal.settings.ogContext.groupType) {
++
++     // Set helper variables
++     var gid = Drupal.settings.ogContext.gid;
++     var groupType = Drupal.settings.ogContext.groupType;
++     var getVars = 'og_gid=' + gid + '&og_grouptype=' + groupType;
++
++      for (var base in settings.ajax) {
++        // Make sure a url is set before concatenating on it.
++        if (Drupal.ajax[base].url && Drupal.ajax[base].url.indexOf(getVars) == '-1') {
++          Drupal.ajax[base].url = Drupal.ajax[base].url + '?' + getVars;
++        }
++      }
++    }
++  }
++};
++
++})(jQuery);
++
++
++/**
++ * Tacks get variables on to ajax paths to directly set og_context.
++ *
++ * Override this empty function from misc/ajax.js to construct urls like /system/ajax?og_ajax_context__gid=2&og_ajax_context__group_type=node
++ */
++Drupal.ajax.prototype.beforeSubmit = function (form_values, element, options) {
++
++   // Before doing anything, make sure that a groupType and gid are available.
++   // @todo, should this actually use values from the incoming settings variable?
++   if (Drupal.settings.ogContext.gid && Drupal.settings.ogContext.groupType) {
++     // Set helper variables
++     var gid = Drupal.settings.ogContext.gid;
++     var groupType = Drupal.settings.ogContext.groupType;
++     var getVars = 'og_ajax_context__gid=' + gid + '&og_ajax_context__group_type=' + groupType;
++
++     // @todo, do these variables need escaping or checking if there is a "?" already?
++     if (options.url && options.url.indexOf(getVars) == '-1') {
++       options.url = options.url + '?' + getVars;
++     }
++   }
++};
+diff --git a/og_context/og_context.module b/og_context/og_context.module
+index 0c5a50f..e7b527e 100644
+--- a/og_context/og_context.module
++++ b/og_context/og_context.module
+@@ -138,10 +138,60 @@ function og_context_og_context_negotiation_info() {
+     'menu path' => array('user/%/edit'),
+   );
+ 
++  $providers['ajax_get_variables'] = array(
++    'name' => t('Ajax callbacks'),
++    'description' => t('Determines context by checking for get variables passed from forms to ajax callbacks when using elements like "Add another value."'),
++    'callback' => 'og_context_handler_ajax_get_variables',
++  );
+   return $providers;
+ }
+ 
+ /**
++ * Get the group from content being edited from the referrer, or the user's
++ * groups if the content is not yet saved.
++ *
++ * @return array()
++ *   Returns an array with a group node.
++ */
++function og_context_handler_ajax_get_variables() {
++
++  if (!empty($_GET['og_ajax_context__group_type']) && !empty($_GET['og_ajax_context__gid'])) {
++    $return =  array(
++      $_GET['og_ajax_context__group_type'] => array(
++        $_GET['og_ajax_context__gid']
++      )
++    );
++
++    return $return;
++  }
++}
++
++/**
++ * Implements hook_library_alter().
++ */
++function og_context_library_alter(&$libraries, $module) {
++
++  // Add a js file to the ajax library.
++  if (!empty($libraries['drupal.ajax']['js'])) {
++
++    // Get the info on the existing js file.
++    $ajax_file =  array_shift($libraries['drupal.ajax']['js']);
++
++    /// Get the path of the file to add.
++    $js_path = drupal_get_path('module', 'og_context')  . '/js/og_context.ajax.js';
++
++    if (!empty($ajax_file['group']) && !empty($ajax_file['weight'])) {
++      $libraries['drupal.ajax']['js'][$js_path] = array(
++        'group' => $ajax_file['group'],
++        'weight' => ((int) $ajax_file['weight']) +1,
++      );
++    }
++  }
++}
++
++
++
++/**
+  * Implements hook_views_api().
+  */
+ function og_context_views_api() {

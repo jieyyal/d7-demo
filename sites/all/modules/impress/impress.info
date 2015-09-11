@@ -1,0 +1,7 @@
+name = Impress
+description = A module for demo
+package = Demo
+configure = admin/config/demo
+version = "7.x-1.0"
+core = "7.x"
+project = "impress"

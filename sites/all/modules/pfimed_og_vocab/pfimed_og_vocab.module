@@ -1,0 +1,50 @@
+<?php
+/**
+ * hook_course_report_insert().
+ */
+function pfimed_og_vocab_course_report_insert($course_report) {
+  var_dump("report");
+  var_dump($course_report);die;
+}
+function pfimed_og_vocab_course_report_update($course_report) {
+  var_dump("report");
+  var_dump($course_report);
+  if ($course_report->complete == 1 && $course_report->original->complete == 0) {
+    var_dump($course_report->original->complete);die('123');
+  }
+}
+
+function pfimed_og_vocab_course_object_fulfillment_insert($course_object_fulfillment) {
+  var_dump("fulfillment");
+  var_dump($course_object_fulfillment);//die;
+}
+/**
+ * Implements hook_og_context_negotiation_info().
+ */
+function pfimed_og_vocab_og_context_negotiation_info() {
+  $providers = array();
+
+  $providers['pfimed_url'] = array(
+    'name' => t('Pfimed URL (content create)'),
+    'description' => t('Select groups if they were passed in the node create URL'),
+    'callback' => 'pfimed_og_vocab_handler_pfimed_url',
+  );
+  
+  return $providers;
+}
+
+/**
+ * Context handler; Get groups from node create URL.
+ */
+function pfimed_og_vocab_handler_pfimed_url() {
+  $item = menu_get_item();
+  $gids = array();
+  /*if (isset($item['map'][2]) && is_numeric($item['map'][2])) {
+    $gids['node'] = array($item['map'][2]);
+  }*/
+  if (strpos($item['path'], 'node/add/') !== 0) {
+    return;
+  }
+  $gids['node'] = array($_GET['gid']);
+  return $gids;
+}

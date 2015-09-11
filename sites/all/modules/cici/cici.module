@@ -1,0 +1,44 @@
+<?php
+/**
+ * Implements hook_boot().
+ */
+function cici_boot() {
+  // Save the un-altered query parameter to be used by themekey
+  $_SESSION['themekey_drupal_orginal_get_q'] = $_GET['q'];
+}
+
+
+/**
+ * Implements hook_themekey_global().
+ */
+function cici_themekey_global() {
+  $parameters = array();
+  $parameters['system:request_uri'] = request_uri();
+  $parameters['drupal:get_q_original'] = $_SESSION['themekey_drupal_orginal_get_q'];
+
+  return $parameters;
+}
+
+
+/**
+ * Implements hook_themekey_properties().
+ */
+function cici_themekey_properties() {
+  // Attributes of properties
+  $attributes = array();
+
+  $attributes['system:request_uri'] = array(
+    'description' => t('System: \'REQUEST_URI\' - The REQUEST_URI from $_SERVER array, be careful, it might not be always the same with drupal:get_q'),
+    'page cache' => THEMEKEY_PAGECACHE_SUPPORTED,
+  );
+
+  $attributes['drupal:get_q_original'] = array(
+    'description' => t('$_GET[\'q\'] - Original value of Drupal\'s query parameter "q" before any modification was made'),
+    'page cache' => THEMEKEY_PAGECACHE_SUPPORTED,
+  );
+
+  // Mapping functions
+  $maps = array();
+
+  return array('attributes' => $attributes, 'maps' => $maps);
+}

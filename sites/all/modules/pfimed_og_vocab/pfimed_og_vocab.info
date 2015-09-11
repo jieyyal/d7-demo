@@ -1,0 +1,7 @@
+name = Pfimed OG Vocabulary
+description = "Pfimed OG Vocabulary."
+core = 7.x
+
+; Information
+project = "pfimed_og_vocab"
+version = 7.x-1.0

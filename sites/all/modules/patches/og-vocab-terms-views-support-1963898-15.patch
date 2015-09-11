@@ -1,0 +1,179 @@
+diff --git a/includes/views/handlers/og_vocab_relation_views_handler_relationship.inc b/includes/views/handlers/og_vocab_relation_views_handler_relationship.inc
+new file mode 100644
+index 0000000..4d9f022
+--- /dev/null
++++ b/includes/views/handlers/og_vocab_relation_views_handler_relationship.inc
+@@ -0,0 +1,36 @@
++<?php
++
++/**
++ * @file
++ * A handler relationship for the OG vocabulary module.
++ */
++
++class og_vocab_relation_views_handler_relationship extends views_handler_relationship {
++
++  /**
++   * Overrides query().
++   */
++  function query() {
++    parent::query();
++
++    // Retrieving the group context of the user.
++    $context = array();
++    if (!module_exists('og_context')) {
++      if (!empty($_SESSION['og_context'])) {
++        $context = $_SESSION['og_context'];
++      }
++    }
++    else {
++      $context = og_context();
++    }
++
++    // The user is not in a group context, display all the og vocab terms.
++    if (empty($context)) {
++      return;
++    }
++
++    // Displaying only terms from OG vocabs that relate to the group.
++    $this->query->add_where(NULL, 'og_vocab_relation_og_vocab.gid', $context['gid']);
++    $this->query->add_where(NULL, 'og_vocab_relation_og_vocab.group_type', $context['group_type']);
++  }
++}
+diff --git a/includes/views/og_vocab.views.inc b/includes/views/og_vocab.views.inc
+new file mode 100644
+index 0000000..58652e5
+--- /dev/null
++++ b/includes/views/og_vocab.views.inc
+@@ -0,0 +1,44 @@
++<?php
++
++/**
++ * @file
++ * Implements for OG vocab with the module views.
++ */
++
++/**
++ * Implements hook_views_data().
++ */
++function og_vocab_views_data() {
++  $data['og_vocab']['table']['group']  = t('OG Vocabulary');
++
++  $data['og_vocab']['table']['base'] = array(
++    'title' => t('OG vocabulary'),
++    'help' => t('OG vocabulary base table.'),
++  );
++
++  $data['og_vocab']['vid'] = array(
++    'title' => t('OG Vocabulary'),
++    'help' => t('Displaying terms from a OG vocabulary.'),
++    'relationship' => array(
++      'handler' => 'views_handler_relationship',
++      'base' => 'taxonomy_vocabulary',
++      'base field' => 'vid',
++      'title' => t('OG vocabulary'),
++      'label' => t('Display only OG vocabularies.'),
++    ),
++  );
++
++  $data['og_vocab']['id'] = array(
++    'title' => t('OG Vocabulary relation'),
++    'help' => t('Adding a relation for OG vocab from a OG group.'),
++    'relationship' => array(
++      'handler' => 'og_vocab_relation_views_handler_relationship',
++      'base' => 'og_vocab_relation',
++      'base field' => 'id',
++      'title' => t('OG vocabulary relation'),
++      'label' => t('Displaying terms from a group.'),
++    ),
++  );
++
++  return $data;
++}
+diff --git a/includes/views/og_vocab.views_default.inc b/includes/views/og_vocab.views_default.inc
+new file mode 100644
+index 0000000..471ef37
+--- /dev/null
++++ b/includes/views/og_vocab.views_default.inc
+@@ -0,0 +1,49 @@
++<?php
++
++/**
++ * Implement hook_views_default_views().
++ */
++function og_vocab_views_default_views() {
++  $view = new view();
++  $view->name = 'group_terms';
++  $view->description = '';
++  $view->tag = 'default';
++  $view->base_table = 'og_vocab';
++  $view->human_name = 'Group terms';
++  $view->core = 7;
++  $view->api_version = '3.0';
++  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
++
++  /* Display: Master */
++  $handler = $view->new_display('default', 'Master', 'default');
++  $handler->display->display_options['title'] = 'Group terms';
++  $handler->display->display_options['use_more_always'] = FALSE;
++  $handler->display->display_options['access']['type'] = 'none';
++  $handler->display->display_options['cache']['type'] = 'none';
++  $handler->display->display_options['query']['type'] = 'views_query';
++  $handler->display->display_options['exposed_form']['type'] = 'basic';
++  $handler->display->display_options['pager']['type'] = 'none';
++  $handler->display->display_options['pager']['options']['offset'] = '0';
++  $handler->display->display_options['style_plugin'] = 'default';
++  $handler->display->display_options['row_plugin'] = 'fields';
++  /* Relationship: OG Vocabulary: OG vocabulary */
++  $handler->display->display_options['relationships']['vid']['id'] = 'vid';
++  $handler->display->display_options['relationships']['vid']['table'] = 'og_vocab';
++  $handler->display->display_options['relationships']['vid']['field'] = 'vid';
++  /* Relationship: OG Vocabulary: OG vocabulary relation */
++  $handler->display->display_options['relationships']['id']['id'] = 'id';
++  $handler->display->display_options['relationships']['id']['table'] = 'og_vocab';
++  $handler->display->display_options['relationships']['id']['field'] = 'id';
++  /* Field: Taxonomy term: Name */
++  $handler->display->display_options['fields']['name']['id'] = 'name';
++  $handler->display->display_options['fields']['name']['table'] = 'taxonomy_term_data';
++  $handler->display->display_options['fields']['name']['field'] = 'name';
++  $handler->display->display_options['fields']['name']['relationship'] = 'vid';
++
++  /* Display: Block */
++  $handler = $view->new_display('block', 'Block', 'block');
++
++  $views[$view->name] = $view;
++
++  return $views;
++}
+diff --git a/og_vocab.info b/og_vocab.info
+index ce60423..2d6b82a 100644
+--- a/og_vocab.info
++++ b/og_vocab.info
+@@ -8,6 +8,9 @@ core = 7.x
+ files[] = includes/og_vocab.og_vocab.inc
+ files[] = includes/og_vocab.exception.inc
+ 
++; Views files
++files[] = includes/views/handlers/og_vocab_relation_views_handler_relationship.inc
++
+ ; Test files
+ files[] = og_vocab.test
+ 
+diff --git a/og_vocab.module b/og_vocab.module
+index 8c08858..6a401b5 100644
+--- a/og_vocab.module
++++ b/og_vocab.module
+@@ -1621,3 +1621,13 @@ function og_vocab_remove_referenced_items_queue_worker($data, $end_time = FALSE)
+   $queue = DrupalQueue::get('og_vocab');
+   return $queue->createItem($data);
+ }
++
++/**
++ * Implements hook_views_api().
++ */
++function og_vocab_views_api() {
++  return array(
++    'api' => 3,
++    'path' => drupal_get_path('module', 'og_vocab') . '/includes/views',
++  );
++}
